@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Công thức Pour Over 20g (4:6) - Flow Rate Timer</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & JetBrains Mono for digital coffee scale look -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            coffee: {
+              950: '#0b0908',
+              900: '#14110f',
+              800: '#1f1a17',
+              700: '#2e2622',
+              600: '#463a33',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #0b0908;
+      color: #f5f5f4;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Digital Scale Glow States */
+    .scale-card-pour {
+      box-shadow: 0 0 40px -8px rgba(245, 158, 11, 0.32), inset 0 1px 0 0 rgba(251, 191, 36, 0.25);
+      border-color: rgba(245, 158, 11, 0.55);
+    }
+    .scale-card-wait {
+      box-shadow: 0 0 35px -8px rgba(56, 189, 248, 0.22), inset 0 1px 0 0 rgba(56, 189, 248, 0.2);
+      border-color: rgba(56, 189, 248, 0.45);
+    }
+    .scale-card-done {
+      box-shadow: 0 0 35px -8px rgba(16, 185, 129, 0.28), inset 0 1px 0 0 rgba(16, 185, 129, 0.25);
+      border-color: rgba(16, 185, 129, 0.5);
+    }
+    .scale-card-idle {
+      box-shadow: 0 12px 32px -10px rgba(0, 0, 0, 0.75), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Animated pouring stream */
+    @keyframes flowDown {
+      0% { stroke-dashoffset: 20; }
+      100% { stroke-dashoffset: 0; }
+    }
+    .pour-stream-line {
+      stroke-dasharray: 5 5;
+      animation: flowDown 0.3s linear infinite;
+    }
+
+    /* Animated spiral waves */
+    @keyframes spiralRipple {
+      0%, 100% { transform: scale(0.95); opacity: 0.65; }
+      50% { transform: scale(1.05); opacity: 1; }
+    }
+    .spiral-active {
+      animation: spiralRipple 1.2s ease-in-out infinite;
+      transform-origin: center;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #14110f;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #2e2622;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="min-h-screen font-sans antialiased selection:bg-amber-500 selection:text-stone-950 pb-12">
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed top-4 right-4 z-50 transform transition-all duration-300 translate-y-[-150%] opacity-0 pointer-events-none bg-stone-900/95 border border-amber-500/40 text-stone-100 px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3">
+    <span id="toastIcon" class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
+    <span id="toastMessage" class="text-sm font-medium">Đã sao chép công thức!</span>
+  </div>
+
+  <!-- Main Container -->
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 pt-5 sm:pt-8">
+
+    <!-- Header Section -->
+    <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-5 border-b border-stone-800/80">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-stone-100 leading-tight">
+          Công thức Pour Over 20g
+          <span class="block text-amber-400">(Phương pháp 4:6)</span>
+        </h1>
+      </div>
+
+      <!-- Top Action Buttons -->
+      <div class="flex flex-wrap items-center gap-2.5">
+        <!-- Sound Toggle Button -->
+        <button id="soundToggleBtn" type="button" class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-coffee-800 hover:bg-coffee-700 border border-stone-700/70 text-stone-200 text-xs sm:text-sm font-medium transition active:scale-95">
+          <svg id="soundOnIcon" class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+          </svg>
+          <svg id="soundOffIcon" class="w-4 h-4 text-stone-500 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+          </svg>
+          <span id="soundToggleText">Âm báo: BẬT</span>
+        </button>
+
+        <!-- Quick Scroll to Timer Button -->
+        <button id="scrollToTimerBtn" type="button" class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 text-xs sm:text-sm font-semibold transition active:scale-95">
+          <svg class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>Đến đồng hồ</span>
+          <svg class="w-3.5 h-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Recipe Quick Specs Pills -->
+    <section class="grid grid-cols-2 sm:grid-cols-4 gap-3 my-5">
+      <div class="bg-coffee-900/90 border border-stone-800/80 rounded-2xl p-3.5 flex flex-col justify-center">
+        <div class="text-[11px] uppercase tracking-wider text-stone-400">Cà phê</div>
+        <div class="text-sm sm:text-base font-bold text-amber-400 mt-0.5">20g cà phê xay thô vừa</div>
+      </div>
+
+      <div class="bg-coffee-900/90 border border-stone-800/80 rounded-2xl p-3.5 flex flex-col justify-center">
+        <div class="text-[11px] uppercase tracking-wider text-stone-400">Lượng nước</div>
+        <div class="text-sm sm:text-base font-bold text-sky-400 mt-0.5">300ml</div>
+      </div>
+
+      <div class="bg-coffee-900/90 border border-stone-800/80 rounded-2xl p-3.5 flex flex-col justify-center">
+        <div class="text-[11px] uppercase tracking-wider text-stone-400">Nhiệt độ</div>
+        <div class="text-sm sm:text-base font-bold text-rose-400 mt-0.5">90–93°C</div>
+      </div>
+
+      <div class="bg-coffee-900/90 border border-stone-800/80 rounded-2xl p-3.5 flex flex-col justify-center">
+        <div class="text-[11px] uppercase tracking-wider text-stone-400">Tổng thời gian</div>
+        <div class="text-sm sm:text-base font-bold text-emerald-400 mt-0.5">3:15</div>
+      </div>
+    </section>
+
+    <!-- Main Interactive Scale & Flow Dashboard -->
+    <div id="timer-card" class="scroll-mt-3 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+      <!-- Left Column: Digital Smart Scale (7 cols on desktop) -->
+      <div class="lg:col-span-7 flex flex-col gap-5">
+
+        <!-- Smart Scale Card -->
+        <div id="scaleCard" class="bg-coffee-900 rounded-3xl border p-4 sm:p-6 transition-all duration-300 scale-card-idle relative overflow-hidden">
+
+          <!-- Top Status Banner (Pour vs Wait) -->
+          <div id="actionBanner" class="rounded-2xl p-3.5 sm:p-4 mb-4 border bg-stone-900/90 border-stone-700/70 transition-all duration-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <span id="statusDot" class="w-3.5 h-3.5 rounded-full bg-stone-500 shrink-0"></span>
+              <div>
+                <div id="currentPourLabel" class="text-xs font-bold uppercase tracking-wider text-stone-400">
+                  SẴN SÀNG PHA • 5 LẦN RÓT (4:6)
+                </div>
+                <div id="currentActionTitle" class="text-base sm:text-xl font-extrabold text-stone-100">
+                  Nhấn "Bắt đầu" khi bạn bắt đầu rót nước
+                </div>
+              </div>
+            </div>
+
+            <!-- Sub-step countdown pill -->
+            <div class="flex items-center gap-2 self-start sm:self-center bg-black/40 px-3.5 py-1.5 rounded-xl border border-white/10">
+              <span id="subTimerLabel" class="text-xs text-stone-400">Mốc đầu:</span>
+              <span id="subTimerValue" class="font-mono text-base font-bold text-amber-400">15.0s</span>
+            </div>
+          </div>
+
+          <!-- Dual Digital Readout: TIME & TARGET WEIGHT -->
+          <div class="grid grid-cols-2 gap-3 sm:gap-4 mb-4">
+            <!-- Stopwatch Readout -->
+            <div class="bg-black/60 border border-stone-800/90 rounded-2xl p-3.5 sm:p-4 flex flex-col justify-between">
+              <div class="flex items-center justify-between text-[11px] sm:text-xs text-stone-400 font-medium gap-1">
+                <span>THỜI GIAN</span>
+                <span id="phaseTimeRangeBadge" class="font-mono text-stone-300 bg-stone-800 px-1.5 py-0.5 rounded-md">0:00 - 0:15</span>
+              </div>
+              <div class="my-1.5 sm:my-2 flex items-baseline gap-0.5 sm:gap-1">
+                <span id="mainTimerDisplay" class="font-mono text-3xl sm:text-5xl font-extrabold tracking-tight text-stone-100">0:00</span>
+                <span id="mainTimerTenths" class="font-mono text-lg sm:text-2xl font-bold text-stone-500">.0</span>
+              </div>
+              <div class="text-[11px] sm:text-xs text-stone-400 flex items-center justify-between">
+                <span>Đích: <strong class="text-stone-200">3:15</strong></span>
+                <span id="overallPercentText" class="font-mono text-amber-400 font-semibold">0%</span>
+              </div>
+            </div>
+
+            <!-- Live Target Grams on Scale Readout -->
+            <div class="bg-black/60 border border-stone-800/90 rounded-2xl p-3.5 sm:p-4 flex flex-col justify-between relative overflow-hidden">
+              <div class="flex items-center justify-between text-[11px] sm:text-xs text-stone-400 font-medium gap-1">
+                <span>MỤC TIÊU CÂN</span>
+                <span id="stepTargetBadge" class="font-mono text-amber-300 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 rounded-md">50g</span>
+              </div>
+              <div class="my-1.5 sm:my-2 flex items-baseline gap-1">
+                <span id="liveWeightDisplay" class="font-mono text-3xl sm:text-5xl font-extrabold tracking-tight text-amber-400">0.0</span>
+                <span class="font-mono text-xs sm:text-xl font-bold text-stone-400">/ 300g</span>
+              </div>
+              <!-- Mini progress bar for weight -->
+              <div class="w-full h-2 bg-stone-800 rounded-full overflow-hidden">
+                <div id="weightProgressBar" class="h-full bg-gradient-to-r from-amber-500 to-emerald-400 transition-all duration-100" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Control Buttons (Placed right below timer & weight for instant mobile reach) -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 mb-4">
+            <!-- Primary Start / Pause Button -->
+            <button id="startPauseBtn" type="button" class="col-span-2 py-3.5 px-5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-stone-950 font-extrabold text-base shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 transition active:scale-98">
+              <svg id="playIcon" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+              </svg>
+              <svg id="pauseIcon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+              </svg>
+              <span id="startPauseText">Bắt Đầu Bấm Giờ</span>
+            </button>
+
+            <!-- Next Phase Skip Button -->
+            <button id="nextPhaseBtn" type="button" class="py-3 px-4 rounded-2xl bg-coffee-800 hover:bg-coffee-700 border border-stone-700 text-stone-200 font-semibold text-sm flex items-center justify-center gap-1.5 transition active:scale-95">
+              <span>Mốc Kế</span>
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+              </svg>
+            </button>
+
+            <!-- Reset Button -->
+            <button id="resetBtn" type="button" class="py-3 px-4 rounded-2xl bg-coffee-800 hover:bg-rose-950/60 hover:border-rose-500/40 border border-stone-700 text-stone-300 hover:text-rose-300 font-semibold text-sm flex items-center justify-center gap-1.5 transition active:scale-95">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span>Đặt Lại</span>
+            </button>
+          </div>
+
+          <!-- Flow Rate (g/s) & Visual Dripper Guide -->
+          <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 bg-stone-950/80 border border-stone-800/80 rounded-2xl p-4 mb-4 items-center">
+            <!-- Animated Dripper SVG (4 cols) -->
+            <div class="sm:col-span-4 flex flex-col items-center justify-center py-1">
+              <svg class="w-28 h-28" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Kettle spout -->
+                <path d="M20 14 H56 L62 22" stroke="#a8a29e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                <!-- Animated Water Stream (Only visible when pouring) -->
+                <line id="svgWaterStream" x1="62" y1="24" x2="62" y2="68" stroke="#f59e0b" stroke-width="3.5" stroke-linecap="round" class="pour-stream-line opacity-0 transition-opacity duration-200" />
+                <!-- Spiral Pour Indicator on top of dripper -->
+                <g id="svgSpiralIndicator" class="opacity-30 transition-opacity duration-300">
+                  <ellipse cx="62" cy="48" rx="26" ry="7" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="3 3"/>
+                  <ellipse cx="62" cy="48" rx="14" ry="4" stroke="#f59e0b" stroke-width="1.5"/>
+                </g>
+                <!-- V60 Cone Body -->
+                <path d="M26 48 L48 92 H76 L98 48 Z" fill="#1c1917" fill-opacity="0.7" stroke="#78716c" stroke-width="2.5" stroke-linejoin="round"/>
+                <!-- Coffee Bed / Water Level inside cone -->
+                <path id="svgCoffeeBed" d="M35 66 L49 90 H75 L89 66 Z" fill="#b45309" fill-opacity="0.65" />
+                <!-- Dripper Base -->
+                <line x1="36" y1="93" x2="88" y2="93" stroke="#a8a29e" stroke-width="3" stroke-linecap="round"/>
+                <!-- Falling Coffee Drops into Server -->
+                <circle id="svgDrop1" cx="62" cy="101" r="2.2" fill="#d97706" class="opacity-40"/>
+                <circle id="svgDrop2" cx="62" cy="110" r="2.2" fill="#f59e0b" class="opacity-20"/>
+              </svg>
+              <span id="visualStateCaption" class="text-[11px] font-medium text-stone-400 mt-1">Chưa rót nước</span>
+            </div>
+
+            <!-- Flow Rate Speedometer & Instructions (8 cols) -->
+            <div class="sm:col-span-8 flex flex-col justify-between gap-3">
+              <div class="flex items-center justify-between">
+                <div>
+                  <span class="text-xs uppercase tracking-wider text-stone-400 block">TỐC ĐỘ DÒNG CHẢY MỤC TIÊU</span>
+                  <div class="flex items-baseline gap-2 mt-0.5">
+                    <span id="flowRateValue" class="font-mono text-3xl font-extrabold text-amber-400">0.0</span>
+                    <span class="font-mono text-sm font-semibold text-stone-300">g / giây (ml/s)</span>
+                  </div>
+                </div>
+                <div id="flowRateTag" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-stone-800 text-stone-300 border border-stone-700">
+                  Chờ bắt đầu
+                </div>
+              </div>
+
+              <!-- Flow Rate Visual Gauge Bar (0 to 6 g/s) -->
+              <div>
+                <div class="flex justify-between text-[11px] font-mono text-stone-400 mb-1">
+                  <span>0 g/s (Ngưng)</span>
+                  <span>3.3 g/s (Ủ)</span>
+                  <span>4.0 - 4.7 g/s (Chuẩn)</span>
+                  <span>6+ g/s</span>
+                </div>
+                <div class="w-full h-3 bg-stone-900 rounded-full overflow-hidden border border-stone-800 p-0.5">
+                  <div id="flowMeterBar" class="h-full rounded-full bg-gradient-to-r from-amber-500 via-amber-400 to-emerald-400 transition-all duration-300" style="width: 0%"></div>
+                </div>
+              </div>
+
+              <!-- Specific Tip for Current Sub-phase -->
+              <p id="phaseCoachingTip" class="text-xs sm:text-sm text-stone-300 bg-coffee-800/90 border border-stone-700/70 rounded-xl p-3 leading-relaxed">
+                💡 <strong>Mẹo chuẩn bị:</strong> Tráng nóng phễu và giấy lọc, cho 20g cà phê xay thô vừa vào phễu, lắc nhẹ cho phẳng mặt bột và bấm Tare cân về 0.0g.
+              </p>
+            </div>
+          </div>
+
+          <!-- Overall Timeline Progress Bar with 5 Pour Markers -->
+          <div>
+            <div class="flex justify-between text-[11px] font-mono text-stone-400 mb-1.5">
+              <span>0:00</span>
+              <span>0:45 (Lần 2)</span>
+              <span>1:30 (Lần 3)</span>
+              <span>2:15 (Lần 4)</span>
+              <span>2:45 (Lần 5)</span>
+              <span>3:15</span>
+            </div>
+            <div class="w-full h-3 bg-stone-950 rounded-full overflow-hidden border border-stone-800 relative">
+              <!-- Milestone dividers -->
+              <div class="absolute top-0 bottom-0 left-[23.07%] w-0.5 bg-stone-700/70 z-10"></div>
+              <div class="absolute top-0 bottom-0 left-[46.15%] w-0.5 bg-stone-700/70 z-10"></div>
+              <div class="absolute top-0 bottom-0 left-[69.23%] w-0.5 bg-stone-700/70 z-10"></div>
+              <div class="absolute top-0 bottom-0 left-[84.61%] w-0.5 bg-stone-700/70 z-10"></div>
+              <div id="totalTimeProgressBar" class="h-full bg-gradient-to-r from-amber-500 via-orange-400 to-emerald-400 transition-all duration-100" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Interactive 5-Pour / 10-Phase Breakdown (5 cols on desktop) -->
+      <div class="lg:col-span-5 bg-coffee-900 border border-stone-800/80 rounded-3xl p-5 flex flex-col gap-4">
+        <div class="flex items-center justify-between border-b border-stone-800 pb-3">
+          <div>
+            <h2 class="text-lg font-bold text-stone-100">Lộ Trình 5 Lần Rót Chi Tiết</h2>
+            <p class="text-xs text-stone-400">Chạm vào bất kỳ giai đoạn nào để nhảy tới mốc giờ đó</p>
+          </div>
+          <span class="text-xs font-mono px-2.5 py-1 rounded-lg bg-stone-800 text-stone-300">10 giai đoạn</span>
+        </div>
+
+        <!-- Dynamic Steps Container -->
+        <div id="stepsListContainer" class="flex flex-col gap-3">
+          <!-- Populated by JavaScript -->
+        </div>
+
+        <!-- 4:6 Method Explanation Card -->
+        <div class="mt-2 bg-stone-950/70 border border-stone-800/80 rounded-2xl p-4 text-xs text-stone-400 space-y-2">
+          <div class="font-bold text-stone-200 flex items-center gap-1.5">
+            <span class="text-amber-400">★</span> Nguyên lý 4:6 trong công thức của bạn:
+          </div>
+          <p>
+            • <strong class="text-amber-300">40% nước đầu (120ml - Lần 1 & 2):</strong> Quyết định cân bằng vị Chua & Ngọt. Rót 50ml lần 1 + 70ml lần 2 giúp tôn vị ngọt đậm đà hơn.
+          </p>
+          <p>
+            • <strong class="text-sky-300">60% nước sau (180ml - Lần 3, 4 & 5):</strong> Chia đều 3 lần × 60ml với tốc độ ổn định <strong class="text-stone-200">4.0 g/giây</strong> giúp chiết xuất body dày vừa phải và hậu vị sạch.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Application Logic -->
+  <script>
+    /**
+     * 10 Sub-phases representing the 5 Pours of the 20g (4:6) Recipe.
+     * Each pour has a POURING sub-phase and a WAITING/DRAINING sub-phase.
+     */
+    const BREW_PHASES = [
+      {
+        id: 0,
+        pourNumber: 1,
+        pourTitle: "Lần 1: Rót 50ml (Ủ cà phê)",
+        type: "pour",
+        actionTitle: "RÓT NƯỚC LẦN 1 (Ủ / BLOOM)",
+        timeLabel: "0:00 – 0:15",
+        startSec: 0,
+        endSec: 15,
+        startWeight: 0,
+        endWeight: 50,
+        addedWeight: 50,
+        flowRate: 3.3,
+        flowDesc: "~3.3 – 3.5 g/giây (Dòng nhỏ đều)",
+        tip: "Bấm giờ và rót xoắn ốc từ tâm ra ngoài 50g nước trong 15 giây (~3.3 g/giây) để làm ướt đều toàn bộ mặt bột."
+      },
+      {
+        id: 1,
+        pourNumber: 1,
+        pourTitle: "Lần 1: Rót 50ml (Ủ cà phê)",
+        type: "wait",
+        actionTitle: "NGƯNG RÓT • ĐỂ CÀ PHÊ NỞ (BLOOM)",
+        timeLabel: "0:15 – 0:45",
+        startSec: 15,
+        endSec: 45,
+        startWeight: 50,
+        endWeight: 50,
+        addedWeight: 0,
+        flowRate: 0.0,
+        flowDesc: "0 g/giây (Ngưng rót 30s)",
+        tip: "Dừng tay rót hoàn toàn. Để bột cà phê giải phóng khí CO2 (nở phồng) trong 30 giây. Cân giữ ở mức 50g."
+      },
+      {
+        id: 2,
+        pourNumber: 2,
+        pourTitle: "Lần 2: Rót +70ml (Tổng 120ml)",
+        type: "pour",
+        actionTitle: "RÓT NƯỚC LẦN 2 (+70g -> 120g)",
+        timeLabel: "0:45 – 1:00",
+        startSec: 45,
+        endSec: 60,
+        startWeight: 50,
+        endWeight: 120,
+        addedWeight: 70,
+        flowRate: 4.7,
+        flowDesc: "~4.5 – 4.7 g/giây (Dòng vừa mạnh)",
+        tip: "Đúng 0:45, rót thêm 70g nước trong 15 giây (tốc độ ~4.7 g/giây) cho đến khi số trên cân đạt 120g."
+      },
+      {
+        id: 3,
+        pourNumber: 2,
+        pourTitle: "Lần 2: Rót +70ml (Tổng 120ml)",
+        type: "wait",
+        actionTitle: "NGƯNG RÓT • CHỜ NƯỚC RÚT (120g)",
+        timeLabel: "1:00 – 1:30",
+        startSec: 60,
+        endSec: 90,
+        startWeight: 120,
+        endWeight: 120,
+        addedWeight: 0,
+        flowRate: 0.0,
+        flowDesc: "0 g/giây (Ngưng rót 30s)",
+        tip: "Ngưng rót 30 giây. Chờ nước rút xuống gần sát mặt lớp bột cà phê trước khi bắt đầu lần rót thứ 3 ở 1:30."
+      },
+      {
+        id: 4,
+        pourNumber: 3,
+        pourTitle: "Lần 3: Rót +60ml (Tổng 180ml)",
+        type: "pour",
+        actionTitle: "RÓT NƯỚC LẦN 3 (+60g -> 180g)",
+        timeLabel: "1:30 – 1:45",
+        startSec: 90,
+        endSec: 105,
+        startWeight: 120,
+        endWeight: 180,
+        addedWeight: 60,
+        flowRate: 4.0,
+        flowDesc: "~4.0 g/giây (Dòng chuẩn ổn định)",
+        tip: "Đúng 1:30, rót thêm 60g nước với tốc độ chuẩn 4.0 g/giây trong 15 giây đến khi cân đạt 180g."
+      },
+      {
+        id: 5,
+        pourNumber: 3,
+        pourTitle: "Lần 3: Rót +60ml (Tổng 180ml)",
+        type: "wait",
+        actionTitle: "NGƯNG RÓT • CHỜ NƯỚC RÚT (180g)",
+        timeLabel: "1:45 – 2:15",
+        startSec: 105,
+        endSec: 135,
+        startWeight: 180,
+        endWeight: 180,
+        addedWeight: 0,
+        flowRate: 0.0,
+        flowDesc: "0 g/giây (Ngưng rót 30s)",
+        tip: "Ngưng rót 30 giây để nước rút qua lớp bột. Chuẩn bị cho lần rót thứ 4 lúc 2:15."
+      },
+      {
+        id: 6,
+        pourNumber: 4,
+        pourTitle: "Lần 4: Rót +60ml (Tổng 240ml)",
+        type: "pour",
+        actionTitle: "RÓT NƯỚC LẦN 4 (+60g -> 240g)",
+        timeLabel: "2:15 – 2:30",
+        startSec: 135,
+        endSec: 150,
+        startWeight: 180,
+        endWeight: 240,
+        addedWeight: 60,
+        flowRate: 4.0,
+        flowDesc: "~4.0 g/giây (Dòng chuẩn ổn định)",
+        tip: "Đúng 2:15, rót tiếp 60g nước (tốc độ 4.0 g/giây) trong 15 giây cho đến khi cân hiển thị 240g."
+      },
+      {
+        id: 7,
+        pourNumber: 4,
+        pourTitle: "Lần 4: Rót +60ml (Tổng 240ml)",
+        type: "wait",
+        actionTitle: "NGƯNG RÓT • CHỜ NƯỚC RÚT (240g)",
+        timeLabel: "2:30 – 2:45",
+        startSec: 150,
+        endSec: 165,
+        startWeight: 240,
+        endWeight: 240,
+        addedWeight: 0,
+        flowRate: 0.0,
+        flowDesc: "0 g/giây (Ngưng rót 15s)",
+        tip: "Chú ý: Lần nghỉ này ngắn hơn (15 giây: từ 2:30 đến 2:45). Sẵn sàng rót lần cuối lúc 2:45."
+      },
+      {
+        id: 8,
+        pourNumber: 5,
+        pourTitle: "Lần 5: Rót +60ml (Tổng 300ml)",
+        type: "pour",
+        actionTitle: "RÓT NƯỚC LẦN 5 CUỐI (+60g -> 300g)",
+        timeLabel: "2:45 – 3:00",
+        startSec: 165,
+        endSec: 180,
+        startWeight: 240,
+        endWeight: 300,
+        addedWeight: 60,
+        flowRate: 4.0,
+        flowDesc: "~4.0 g/giây (Về đích 300g)",
+        tip: "Đúng 2:45, rót nốt 60g nước cuối cùng (4.0 g/giây) để đạt tổng trọng lượng 300g lúc 3:00."
+      },
+      {
+        id: 9,
+        pourNumber: 5,
+        pourTitle: "Lần 5: Rót +60ml (Tổng 300ml)",
+        type: "wait",
+        actionTitle: "ĐỢI NƯỚC RÚT HẾT & NHẤC PHỄU",
+        timeLabel: "3:00 – 3:15+",
+        startSec: 180,
+        endSec: 195,
+        startWeight: 300,
+        endWeight: 300,
+        addedWeight: 0,
+        flowRate: 0.0,
+        flowDesc: "0 g/giây (Đợi rút cạn 3:15 - 3:30)",
+        tip: "Hạ ấm nước xuống. Đợi nước trong phễu rút hết hoàn toàn (khoảng 3:15 – 3:30) rồi nhấc phễu ra và thưởng thức!"
+      }
+    ];
+
+    const TOTAL_RECIPE_SECONDS = 195; // 3:15 (195 seconds)
+
+    // State variables
+    let elapsedSec = 0;
+    let isRunning = false;
+    let soundEnabled = true;
+    let timerInterval = null;
+    let lastTickTimestamp = null;
+    let lastAnnouncedPhaseId = -1;
+    let lastBeepSecond = -1;
+
+    // Web Audio API Context
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtx = new AudioContextClass();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    /**
+     * Synthesize clean digital scale beeps using Web Audio API
+     */
+    function playBeep(type = 'tick') {
+      if (!soundEnabled) return;
+      try {
+        initAudio();
+        if (!audioCtx) return;
+
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === 'pourStart') {
+          // Double rising chime for "START POURING"
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(660, now);
+          osc.frequency.setValueAtTime(880, now + 0.1);
+          gain.gain.setValueAtTime(0.18, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+          osc.start(now);
+          osc.stop(now + 0.32);
+        } else if (type === 'pourStop') {
+          // Soft lower tone for "STOP POURING / WAIT"
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(520, now);
+          osc.frequency.setValueAtTime(420, now + 0.1);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+          osc.start(now);
+          osc.stop(now + 0.28);
+        } else if (type === 'countdown') {
+          // Short subtle tick for 3-2-1 countdown before next pour
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(740, now);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+          osc.start(now);
+          osc.stop(now + 0.08);
+        } else if (type === 'finish') {
+          // Pleasant 3-note chord arpeggio for completion
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(587.33, now);       // D5
+          osc.frequency.setValueAtTime(739.99, now + 0.12); // F#5
+          osc.frequency.setValueAtTime(880.00, now + 0.24); // A5
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+          osc.start(now);
+          osc.stop(now + 0.6);
+        }
+      } catch (e) {
+        // Ignore audio errors if blocked by browser autoplay policy
+      }
+    }
+
+    // Format seconds into M:SS
+    function formatMinutesSeconds(sec) {
+      const whole = Math.floor(Math.max(0, sec));
+      const m = Math.floor(whole / 60);
+      const s = whole % 60;
+      return `${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+
+    // Render the 5 Pours (each containing Pour & Wait sub-steps) on the right panel
+    function renderStepsTimeline() {
+      const container = document.getElementById('stepsListContainer');
+      container.innerHTML = '';
+
+      for (let pourNum = 1; pourNum <= 5; pourNum++) {
+        const pourPhase = BREW_PHASES.find(p => p.pourNumber === pourNum && p.type === 'pour');
+        const waitPhase = BREW_PHASES.find(p => p.pourNumber === pourNum && p.type === 'wait');
+
+        const groupCard = document.createElement('div');
+        groupCard.id = `pour-group-${pourNum}`;
+        groupCard.className = 'rounded-2xl border border-stone-800 bg-stone-950/60 p-3.5 transition-all duration-200';
+
+        groupCard.innerHTML = `
+          <div class="flex items-center justify-between mb-2.5">
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-400 font-mono text-xs font-bold flex items-center justify-center">
+                ${pourNum}
+              </span>
+              <h3 class="text-sm font-bold text-stone-100">${pourPhase.pourTitle}</h3>
+            </div>
+            <span class="font-mono text-xs font-semibold text-stone-400">
+              Đích: <strong class="text-amber-300">${pourPhase.endWeight}g</strong>
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <!-- Sub-step A: Pouring -->
+            <button type="button" onclick="jumpToPhase(${pourPhase.id})" id="phase-btn-${pourPhase.id}"
+              class="text-left p-2.5 rounded-xl border border-stone-800/90 bg-coffee-900/70 hover:border-amber-500/50 transition flex flex-col justify-between gap-1 group">
+              <div class="flex items-center justify-between w-full">
+                <span class="text-[11px] font-mono font-bold text-amber-400">${pourPhase.timeLabel}</span>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 font-semibold">
+                  ${pourPhase.flowRate.toFixed(1)} g/s
+                </span>
+              </div>
+              <div class="text-xs font-bold text-stone-200 group-hover:text-amber-300">
+                💧 Rót +${pourPhase.addedWeight}g (${pourPhase.startWeight}→${pourPhase.endWeight}g)
+              </div>
+              <div class="text-[11px] text-stone-400">Trong ${pourPhase.endSec - pourPhase.startSec} giây</div>
+            </button>
+
+            <!-- Sub-step B: Waiting / Draining -->
+            <button type="button" onclick="jumpToPhase(${waitPhase.id})" id="phase-btn-${waitPhase.id}"
+              class="text-left p-2.5 rounded-xl border border-stone-800/90 bg-coffee-900/70 hover:border-sky-500/50 transition flex flex-col justify-between gap-1 group">
+              <div class="flex items-center justify-between w-full">
+                <span class="text-[11px] font-mono font-bold text-sky-400">${waitPhase.timeLabel}</span>
+                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-sky-500/15 text-sky-300 font-semibold">
+                  0 g/s
+                </span>
+              </div>
+              <div class="text-xs font-bold text-stone-200 group-hover:text-sky-300">
+                ⏳ ${pourNum === 1 ? 'Ủ cà phê (Bloom)' : pourNum === 5 ? 'Đợi rút hết' : 'Ngưng rót, chờ rút'}
+              </div>
+              <div class="text-[11px] text-stone-400">Giữ cân ở ${waitPhase.endWeight}g (${waitPhase.endSec - waitPhase.startSec}s)</div>
+            </button>
+          </div>
+        `;
+
+        container.appendChild(groupCard);
+      }
+    }
+
+    // Find current active phase based on elapsedSec
+    function getCurrentPhase(sec) {
+      for (let i = 0; i < BREW_PHASES.length; i++) {
+        if (sec >= BREW_PHASES[i].startSec && sec < BREW_PHASES[i].endSec) {
+          return BREW_PHASES[i];
+        }
+      }
+      return null; // Past 3:15
+    }
+
+    // Calculate live target weight on scale at exact moment
+    function calculateLiveTargetWeight(sec, phase) {
+      if (sec <= 0) return 0;
+      if (!phase || sec >= TOTAL_RECIPE_SECONDS) return 300;
+
+      if (phase.type === 'wait') {
+        return phase.endWeight;
+      }
+
+      const phaseDuration = phase.endSec - phase.startSec;
+      const progressInPhase = Math.min(1, Math.max(0, (sec - phase.startSec) / phaseDuration));
+      return phase.startWeight + progressInPhase * (phase.endWeight - phase.startWeight);
+    }
+
+    // Update all UI elements based on current elapsedSec
+    function updateUI() {
+      const mainTimerDisplay = document.getElementById('mainTimerDisplay');
+      const mainTimerTenths = document.getElementById('mainTimerTenths');
+      const liveWeightDisplay = document.getElementById('liveWeightDisplay');
+      const weightProgressBar = document.getElementById('weightProgressBar');
+      const totalTimeProgressBar = document.getElementById('totalTimeProgressBar');
+      const overallPercentText = document.getElementById('overallPercentText');
+      const scaleCard = document.getElementById('scaleCard');
+      const actionBanner = document.getElementById('actionBanner');
+      const statusDot = document.getElementById('statusDot');
+      const currentPourLabel = document.getElementById('currentPourLabel');
+      const currentActionTitle = document.getElementById('currentActionTitle');
+      const subTimerLabel = document.getElementById('subTimerLabel');
+      const subTimerValue = document.getElementById('subTimerValue');
+      const phaseTimeRangeBadge = document.getElementById('phaseTimeRangeBadge');
+      const stepTargetBadge = document.getElementById('stepTargetBadge');
+      const flowRateValue = document.getElementById('flowRateValue');
+      const flowRateTag = document.getElementById('flowRateTag');
+      const flowMeterBar = document.getElementById('flowMeterBar');
+      const phaseCoachingTip = document.getElementById('phaseCoachingTip');
+      const svgWaterStream = document.getElementById('svgWaterStream');
+      const svgSpiralIndicator = document.getElementById('svgSpiralIndicator');
+      const visualStateCaption = document.getElementById('visualStateCaption');
+
+      // 1. Update Stopwatch text
+      mainTimerDisplay.textContent = formatMinutesSeconds(elapsedSec);
+      const tenths = Math.floor((elapsedSec % 1) * 10);
+      mainTimerTenths.textContent = `.${tenths}`;
+
+      // 2. Determine active phase
+      const activePhase = getCurrentPhase(elapsedSec);
+      const targetWeight = calculateLiveTargetWeight(elapsedSec, activePhase);
+
+      // 3. Update Weight Readout & Progress
+      liveWeightDisplay.textContent = targetWeight.toFixed(1);
+      const weightPercent = Math.min(100, (targetWeight / 300) * 100);
+      weightProgressBar.style.width = `${weightPercent}%`;
+
+      const timePercent = Math.min(100, (elapsedSec / TOTAL_RECIPE_SECONDS) * 100);
+      totalTimeProgressBar.style.width = `${timePercent}%`;
+      overallPercentText.textContent = `${Math.floor(timePercent)}%`;
+
+      // 4. Handle Phase Transitions & Audio Cues while running
+      if (isRunning && activePhase) {
+        if (activePhase.id !== lastAnnouncedPhaseId) {
+          lastAnnouncedPhaseId = activePhase.id;
+          if (activePhase.type === 'pour') {
+            playBeep('pourStart');
+          } else {
+            playBeep('pourStop');
+          }
+        }
+
+        // Countdown beep 3, 2, 1 seconds before a phase ends
+        const remainingWholeSec = Math.ceil(activePhase.endSec - elapsedSec);
+        if (remainingWholeSec <= 3 && remainingWholeSec >= 1) {
+          const currentWholeSec = Math.floor(elapsedSec);
+          if (currentWholeSec !== lastBeepSecond) {
+            lastBeepSecond = currentWholeSec;
+            playBeep('countdown');
+          }
+        }
+      }
+
+      // 5. Style UI according to Idle / Pouring / Waiting / Completed states
+      if (elapsedSec === 0 && !isRunning) {
+        // IDLE STATE
+        scaleCard.className = 'bg-coffee-900 rounded-3xl border p-5 sm:p-6 transition-all duration-300 scale-card-idle relative overflow-hidden';
+        actionBanner.className = 'rounded-2xl p-4 mb-5 border bg-stone-900/90 border-stone-700/70 transition-all duration-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3';
+        statusDot.className = 'w-3.5 h-3.5 rounded-full bg-amber-400 shrink-0';
+        currentPourLabel.textContent = 'SẴN SÀNG PHA • LẦN 1 (0:00 – 0:45)';
+        currentPourLabel.className = 'text-xs font-bold uppercase tracking-wider text-amber-400';
+        currentActionTitle.textContent = 'Bấm "Bắt Đầu" và rót 50g đầu tiên (~3.3 g/giây)';
+        subTimerLabel.textContent = 'Thời gian rót:';
+        subTimerValue.textContent = '15.0s';
+        phaseTimeRangeBadge.textContent = '0:00 - 0:15';
+        stepTargetBadge.textContent = 'Đích Lần 1: 50g';
+        flowRateValue.textContent = '3.3';
+        flowRateValue.className = 'font-mono text-3xl font-extrabold text-amber-400';
+        flowRateTag.textContent = 'Chuẩn bị: 3.3 g/giây';
+        flowRateTag.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30';
+        flowMeterBar.style.width = '55%';
+        svgWaterStream.classList.add('opacity-0');
+        svgSpiralIndicator.className = 'opacity-30 transition-opacity duration-300';
+        visualStateCaption.textContent = 'Sẵn sàng rót xoắn ốc';
+        phaseCoachingTip.innerHTML = '💡 <strong>Bước 1 (0:00 – 0:15):</strong> Bấm giờ và rót đều 50g nước trong 15 giây (tốc độ <strong>~3.3 g/giây</strong>). Sau đó ngưng rót 30 giây từ 0:15 đến 0:45.';
+      } else if (activePhase) {
+        const remainingInPhase = Math.max(0, activePhase.endSec - elapsedSec);
+        phaseTimeRangeBadge.textContent = activePhase.timeLabel;
+        stepTargetBadge.textContent = `Đích Lần ${activePhase.pourNumber}: ${activePhase.endWeight}g`;
+        phaseCoachingTip.innerHTML = `💡 <strong>Hướng dẫn:</strong> ${activePhase.tip}`;
+
+        if (activePhase.type === 'pour') {
+          // ACTIVE POURING STATE
+          scaleCard.className = 'bg-coffee-900 rounded-3xl border p-5 sm:p-6 transition-all duration-300 scale-card-pour relative overflow-hidden';
+          actionBanner.className = 'rounded-2xl p-4 mb-5 border bg-amber-500/15 border-amber-500/50 transition-all duration-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3';
+          statusDot.className = 'w-3.5 h-3.5 rounded-full bg-amber-400 animate-ping shrink-0';
+          currentPourLabel.textContent = `${activePhase.pourTitle.toUpperCase()} • ĐANG RÓT NƯỚC`;
+          currentPourLabel.className = 'text-xs font-bold uppercase tracking-wider text-amber-300';
+          currentActionTitle.textContent = activePhase.actionTitle;
+          subTimerLabel.textContent = 'Còn thời gian rót:';
+          subTimerValue.textContent = `${remainingInPhase.toFixed(1)}s`;
+          subTimerValue.className = 'font-mono text-base font-bold text-amber-300';
+
+          flowRateValue.textContent = activePhase.flowRate.toFixed(1);
+          flowRateValue.className = 'font-mono text-3xl font-extrabold text-amber-400';
+          flowRateTag.textContent = activePhase.flowDesc;
+          flowRateTag.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/20 text-amber-200 border border-amber-400/40';
+          flowMeterBar.style.width = `${Math.min(100, (activePhase.flowRate / 5.5) * 100)}%`;
+
+          svgWaterStream.classList.remove('opacity-0');
+          svgSpiralIndicator.className = 'opacity-100 spiral-active transition-opacity duration-300';
+          visualStateCaption.textContent = `Đang rót ${activePhase.flowRate.toFixed(1)} g/giây`;
+        } else {
+          // WAITING / DRAINING STATE
+          scaleCard.className = 'bg-coffee-900 rounded-3xl border p-5 sm:p-6 transition-all duration-300 scale-card-wait relative overflow-hidden';
+          actionBanner.className = 'rounded-2xl p-4 mb-5 border bg-sky-500/10 border-sky-500/40 transition-all duration-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3';
+          statusDot.className = 'w-3.5 h-3.5 rounded-full bg-sky-400 animate-pulse shrink-0';
+          currentPourLabel.textContent = `${activePhase.pourTitle.toUpperCase()} • NGƯNG RÓT`;
+          currentPourLabel.className = 'text-xs font-bold uppercase tracking-wider text-sky-300';
+          currentActionTitle.textContent = activePhase.actionTitle;
+          subTimerLabel.textContent = activePhase.pourNumber < 5 ? 'Rót tiếp sau:' : 'Đợi rút hết:';
+          subTimerValue.textContent = `${remainingInPhase.toFixed(1)}s`;
+          subTimerValue.className = 'font-mono text-base font-bold text-sky-300';
+
+          flowRateValue.textContent = '0.0';
+          flowRateValue.className = 'font-mono text-3xl font-extrabold text-sky-400';
+          flowRateTag.textContent = activePhase.flowDesc;
+          flowRateTag.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-sky-500/15 text-sky-300 border border-sky-500/30';
+          flowMeterBar.style.width = '0%';
+
+          svgWaterStream.classList.add('opacity-0');
+          svgSpiralIndicator.className = 'opacity-20 transition-opacity duration-300';
+          visualStateCaption.textContent = 'Ngưng rót • Nước đang rút';
+        }
+      } else {
+        // COMPLETED STATE (>= 3:15)
+        scaleCard.className = 'bg-coffee-900 rounded-3xl border p-5 sm:p-6 transition-all duration-300 scale-card-done relative overflow-hidden';
+        actionBanner.className = 'rounded-2xl p-4 mb-5 border bg-emerald-500/15 border-emerald-500/50 transition-all duration-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3';
+        statusDot.className = 'w-3.5 h-3.5 rounded-full bg-emerald-400 shrink-0';
+        currentPourLabel.textContent = 'HOÀN THÀNH 300ML (3:15 – 3:30)';
+        currentPourLabel.className = 'text-xs font-bold uppercase tracking-wider text-emerald-300';
+        currentActionTitle.textContent = 'Đợi nước rút hết hoàn toàn rồi nhấc phễu!';
+        subTimerLabel.textContent = 'Trạng thái:';
+        subTimerValue.textContent = 'Xong 100%';
+        subTimerValue.className = 'font-mono text-base font-bold text-emerald-300';
+        phaseTimeRangeBadge.textContent = '3:15 - 3:30';
+        stepTargetBadge.textContent = 'Tổng: 300g';
+        flowRateValue.textContent = '0.0';
+        flowRateValue.className = 'font-mono text-3xl font-extrabold text-emerald-400';
+        flowRateTag.textContent = 'Hoàn tất chiết xuất';
+        flowRateTag.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+        flowMeterBar.style.width = '0%';
+        svgWaterStream.classList.add('opacity-0');
+        visualStateCaption.textContent = 'Hoàn tất • Thưởng thức!';
+        phaseCoachingTip.innerHTML = '🎉 <strong>Hoàn tất!</strong> Nếu nước rút hết trong khoảng <strong>3:15 – 3:30</strong>, cỡ xay và tốc độ dòng chảy của bạn đã chuẩn xác. Lắc đều bình chứa và thưởng thức!';
+      }
+
+      // 6. Highlight active card in the right-side timeline
+      BREW_PHASES.forEach(phase => {
+        const btn = document.getElementById(`phase-btn-${phase.id}`);
+        if (!btn) return;
+
+        const isCurrent = activePhase && activePhase.id === phase.id && (isRunning || elapsedSec > 0);
+        const isPast = elapsedSec >= phase.endSec;
+
+        if (isCurrent) {
+          if (phase.type === 'pour') {
+            btn.className = 'text-left p-2.5 rounded-xl border-2 border-amber-400 bg-amber-500/15 transition flex flex-col justify-between gap-1 shadow-md';
+          } else {
+            btn.className = 'text-left p-2.5 rounded-xl border-2 border-sky-400 bg-sky-500/15 transition flex flex-col justify-between gap-1 shadow-md';
+          }
+        } else if (isPast) {
+          btn.className = 'text-left p-2.5 rounded-xl border border-emerald-800/50 bg-stone-900/40 opacity-60 transition flex flex-col justify-between gap-1';
+        } else {
+          btn.className = 'text-left p-2.5 rounded-xl border border-stone-800/90 bg-coffee-900/70 hover:border-stone-600 transition flex flex-col justify-between gap-1 group';
+        }
+      });
+
+      for (let pourNum = 1; pourNum <= 5; pourNum++) {
+        const groupEl = document.getElementById(`pour-group-${pourNum}`);
+        if (!groupEl) continue;
+        if (activePhase && activePhase.pourNumber === pourNum && (isRunning || elapsedSec > 0)) {
+          groupEl.className = 'rounded-2xl border border-amber-500/50 bg-stone-900/90 p-3.5 transition-all duration-200 shadow-lg';
+        } else {
+          groupEl.className = 'rounded-2xl border border-stone-800 bg-stone-950/60 p-3.5 transition-all duration-200';
+        }
+      }
+    }
+
+    // Start or Pause Timer
+    function toggleStartPause() {
+      initAudio();
+      const startPauseText = document.getElementById('startPauseText');
+      const playIcon = document.getElementById('playIcon');
+      const pauseIcon = document.getElementById('pauseIcon');
+
+      if (isRunning) {
+        // Pause
+        isRunning = false;
+        clearInterval(timerInterval);
+        timerInterval = null;
+        startPauseText.textContent = 'Tiếp Tục';
+        playIcon.classList.remove('hidden');
+        pauseIcon.classList.add('hidden');
+      } else {
+        // If already finished past 3:30, reset to 0 before starting
+        if (elapsedSec >= 210) {
+          elapsedSec = 0;
+          lastAnnouncedPhaseId = -1;
+        }
+        isRunning = true;
+        lastTickTimestamp = performance.now();
+        startPauseText.textContent = 'Tạm Dừng';
+        playIcon.classList.add('hidden');
+        pauseIcon.classList.remove('hidden');
+
+        timerInterval = setInterval(() => {
+          const now = performance.now();
+          const deltaSec = (now - lastTickTimestamp) / 1000;
+          lastTickTimestamp = now;
+          elapsedSec += deltaSec;
+
+          // Trigger finish sound right at 3:15 (195s)
+          if (elapsedSec >= TOTAL_RECIPE_SECONDS && lastAnnouncedPhaseId !== 999) {
+            lastAnnouncedPhaseId = 999;
+            playBeep('finish');
+          }
+
+          // Auto-stop at 3:30 (210s)
+          if (elapsedSec >= 210) {
+            elapsedSec = 210;
+            toggleStartPause();
+          }
+
+          updateUI();
+        }, 50);
+      }
+      updateUI();
+    }
+
+    // Reset Timer
+    function resetTimer() {
+      if (isRunning) {
+        isRunning = false;
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      elapsedSec = 0;
+      lastAnnouncedPhaseId = -1;
+      lastBeepSecond = -1;
+
+      document.getElementById('startPauseText').textContent = 'Bắt Đầu Bấm Giờ';
+      document.getElementById('playIcon').classList.remove('hidden');
+      document.getElementById('pauseIcon').classList.add('hidden');
+      updateUI();
+    }
+
+    // Jump directly to any sub-phase
+    function jumpToPhase(phaseId) {
+      const targetPhase = BREW_PHASES.find(p => p.id === phaseId);
+      if (!targetPhase) return;
+      elapsedSec = targetPhase.startSec;
+      lastAnnouncedPhaseId = targetPhase.id;
+      lastTickTimestamp = performance.now();
+      updateUI();
+      showToast(`Đã chuyển tới: ${targetPhase.timeLabel} (${targetPhase.actionTitle})`);
+    }
+
+    // Jump to the next sub-phase
+    function jumpToNextPhase() {
+      const current = getCurrentPhase(elapsedSec);
+      if (!current) {
+        resetTimer();
+        return;
+      }
+      const nextId = current.id + 1;
+      if (nextId < BREW_PHASES.length) {
+        jumpToPhase(nextId);
+      } else {
+        elapsedSec = TOTAL_RECIPE_SECONDS;
+        updateUI();
+      }
+    }
+
+    // Show non-blocking toast message
+    let toastTimeout = null;
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      const toastMessage = document.getElementById('toastMessage');
+      toastMessage.textContent = message;
+      toast.classList.remove('translate-y-[-150%]', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-[-150%]', 'opacity-0');
+      }, 2400);
+    }
+
+    // Wire up event listeners on load
+    window.addEventListener('DOMContentLoaded', () => {
+      renderStepsTimeline();
+      updateUI();
+
+      document.getElementById('startPauseBtn').addEventListener('click', toggleStartPause);
+      document.getElementById('resetBtn').addEventListener('click', resetTimer);
+      document.getElementById('nextPhaseBtn').addEventListener('click', jumpToNextPhase);
+
+      document.getElementById('scrollToTimerBtn').addEventListener('click', () => {
+        const timerCard = document.getElementById('timer-card');
+        if (timerCard) {
+          timerCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+
+      document.getElementById('soundToggleBtn').addEventListener('click', () => {
+        soundEnabled = !soundEnabled;
+        const soundOnIcon = document.getElementById('soundOnIcon');
+        const soundOffIcon = document.getElementById('soundOffIcon');
+        const soundToggleText = document.getElementById('soundToggleText');
+
+        if (soundEnabled) {
+          soundOnIcon.classList.remove('hidden');
+          soundOffIcon.classList.add('hidden');
+          soundToggleText.textContent = 'Âm báo: BẬT';
+          playBeep('countdown');
+          showToast('Đã bật âm báo chuyển giai đoạn');
+        } else {
+          soundOnIcon.classList.add('hidden');
+          soundOffIcon.classList.remove('hidden');
+          soundToggleText.textContent = 'Âm báo: TẮT';
+          showToast('Đã tắt âm báo');
+        }
+      });
+    });
+  </script>
+</body>
+</html>
